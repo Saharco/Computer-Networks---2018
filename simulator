@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+import numpy as np
+from switch import Switch
+import sys
+
+
+def run(T, N, M, P, lambdas, Q_sizes, mius):
+    final_result = None
+    final_time = 0.0
+    current_time = 0
+    switch = Switch(N, M, P, Q_sizes, mius)
+    while current_time < T or final_result is None:
+        if current_time < T:
+            switch.tick([np.random.poisson(l) for l in lambdas])
+        else:
+            current_time += switch.tick(None)
+        current_state = switch.state()
+
+        if current_state.num_packages == 0:
+            if final_result is None:
+                final_result = current_state
+                final_time = current_time
+
+        else:
+                final_result = None
+
+        current_time += 1
+    return final_result, final_time
+
+
+
+
+if __name__ == "__main__":
+    T = int(sys.argv[1])
+    N = int(sys.argv[2])
+    M = int(sys.argv[3])
+    P = np.array([float(x) for x in sys.argv[4:4 + N * M]]).reshape((N, M))
+    lambdas = [float(x) for x in sys.argv[4 + N * M: 4 + N * (M + 1)]]
+    Q_sizes = [int(x) for x in sys.argv[4 + N * (M + 1): 4 + N * (M + 1) + M]]
+    mius = [float(x) for x in sys.argv[4 + N * (M + 1) + M: len(sys.argv)]]
+    final_result, final_time = run(T, N, M, P, lambdas, Q_sizes, mius)
+    print(final_result.processed, " ".join(map(str, final_result.processed_per_port)), final_result.thrown,
+          " ".join(map(str, final_result.thrown_per_port)), final_time, final_result.average_wait, final_result.avg_service)
